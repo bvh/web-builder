@@ -1,7 +1,7 @@
 import logging
 import os
 
-from web_builder.file import File
+from web_builder.node import File
 
 log = logging.getLogger("web-builder")
 

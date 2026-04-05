@@ -2,7 +2,7 @@ import logging
 import os
 from pathlib import Path
 
-from web_builder.file import Content, File, Image
+from web_builder.node import Content, File, Image
 
 log = logging.getLogger("web-builder")
 

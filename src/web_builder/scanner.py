@@ -2,6 +2,8 @@ import logging
 import os
 from pathlib import Path
 
+from web_builder.file import Content, File, Image
+
 log = logging.getLogger("web-builder")
 
 
@@ -50,32 +52,23 @@ def _scan_directory(source: str, parent: str | None = None) -> dict[str, any]:
                         _scan_directory(entry.path, parent=new_parent)
                     )
                 elif entry.name.lower() == "config.json":
-                    result["config"] = _scan_file(entry)
+                    result["config"] = str(_scan_file(entry))
                 elif entry.name.lower() == "index.md":
-                    result["content"] = _scan_file(entry)
+                    result["content"] = str(_scan_file(entry))
                 elif entry.is_file():
-                    result["files"].append(_scan_file(entry, parent=new_parent))
+                    result["files"].append(str(_scan_file(entry, parent=new_parent)))
     return result
 
 
 def _scan_file(entry: os.DirEntry, parent: str | None = None) -> dict[str, any]:
-    obj = Path(entry.path)
-    suffix = obj.suffix
-    stat = entry.stat()
-    result = {
-        "name": entry.name,
-        "source": entry.path,
-        "path": os.path.join(parent, entry.name) if parent else entry.name,
-        "stem": obj.stem,
-        "suffix": suffix,
-        "owner": obj.owner(),
-        "ctime": stat.st_ctime,
-        "mtime": stat.st_mtime,
-    }
+    path = Path(entry.path)
+    suffix = path.suffix
+
     if suffix.lower() in [".jpg", ".jpeg"]:
-        result["type"] = "IMAGE"
+        file = Image(entry, path, parent)
     elif suffix.lower() in [".md"]:
-        result["type"] = "CONTENT"
+        file = Content(entry, path, parent)
     else:
-        result["type"] = "FILE"
-    return result
+        file = File(entry, path, parent)
+
+    return file

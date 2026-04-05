@@ -22,38 +22,77 @@ def main() -> None:
     log.debug(f"{args.source=}")
     log.debug(f"{args.target=}")
 
-    print(json.dumps(_scan_directory(args.source), indent=4))
+    if _check_source(args.source):
+        print(json.dumps(_scan_directory(args.source), indent=4))
 
     log.debug("END")
     return 0
 
 
-def _scan_directory(path: str) -> list[dict[str, any]]:
-    result = []
-    with os.scandir(os.path.abspath(path)) as entries:
+def _check_source(source: str) -> bool:
+    result = False
+    path = Path(os.path.abspath(source))
+    if path.exists():
+        if path.is_dir():
+            result = True
+        else:
+            raise (ValueError, f"source path ({source}) must be a directory")
+    else:
+        raise (ValueError, f"source path ({source}) does not exist")
+    return result
+
+
+def _scan_directory(source: str, parent: str | None = None) -> dict[str, any]:
+    path = os.path.abspath(source)
+    path_obj = Path(path)
+    log.debug(f"{parent=}")
+    new_parent = os.path.join(parent, path_obj.name) if parent else os.path.sep
+    log.debug(f"{new_parent=}")
+    result = {
+        "type": "DIR" if parent else "HOME",
+        "name": path_obj.name,
+        "source": os.path.abspath(source),
+        "path": new_parent,
+        "owner": path_obj.owner(),
+        "files": [],
+    }
+    with os.scandir(path) as entries:
         for entry in entries:
-            # ignore dotfies and symbolic links
+            # skip dotfiles and symbolic links
             if not (entry.name.startswith(".") or entry.is_symlink()):
-                stat = entry.stat()
-                item = {
-                    "name": entry.name,
-                    "path": entry.path,
-                    "ctime": stat.st_ctime,
-                    "mtime": stat.st_mtime,
-                }
                 if entry.is_dir():
-                    item["type"] = "DIR"
-                    item["files"] = _scan_directory(entry.path)
+                    result["files"].append(
+                        _scan_directory(entry.path, parent=new_parent)
+                    )
+                elif entry.name.lower() == "config.json":
+                    result["config"] = _scan_file(entry)
+                elif entry.name.lower() == "index.md":
+                    result["content"] = _scan_file(entry)
                 elif entry.is_file():
-                    path_obj = Path(entry.path)
-                    item["stem"] = path_obj.stem
-                    item["suffix"] = path_obj.suffix
-                    item["owner"] = path_obj.owner()
-                    item["type"] = "FILE"
-                else:
-                    item["type"] = "UNKNOWN"
-                    log.warning(f"unhandled dirEntry type for {entry.path}")
-                result.append(item)
+                    result["files"].append(_scan_file(entry, parent=new_parent))
+    return result
+
+
+def _scan_file(entry: os.DirEntry, parent: str | None = None) -> dict[str, any]:
+    obj = Path(entry.path)
+    suffix = obj.suffix
+    stat = entry.stat()
+    result = {
+        "name": entry.name,
+        "source": entry.path,
+        "path": os.path.join(parent, entry.name) if parent else entry.name,
+        "stem": obj.stem,
+        "suffix": suffix,
+        "owner": obj.owner(),
+        "ctime": stat.st_ctime,
+        "mtime": stat.st_mtime,
+    }
+    if suffix.lower() in [".jpg", ".jpeg"]:
+        result["type"] = "IMAGE"
+    elif suffix.lower() in [".md"]:
+        result["type"] = "CONTENT"
+    else:
+        result["type"] = "FILE"
     return result
 
 

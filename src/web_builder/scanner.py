@@ -33,7 +33,7 @@ def _scan_directory(source: str, parent: str | None = None) -> dict[str, any]:
     path = os.path.abspath(source)
     path_obj = Path(path)
     log.debug(f"{parent=}")
-    new_parent = os.path.join(parent, path_obj.name) if parent else os.path.sep
+    new_parent = os.path.join(parent, path_obj.name) if parent is not None else ""
     log.debug(f"{new_parent=}")
     result = {
         "type": "DIR" if parent else "HOME",
@@ -52,11 +52,11 @@ def _scan_directory(source: str, parent: str | None = None) -> dict[str, any]:
                         _scan_directory(entry.path, parent=new_parent)
                     )
                 elif entry.name.lower() == "config.json":
-                    result["config"] = str(_scan_file(entry))
+                    result["config"] = _scan_file(entry)
                 elif entry.name.lower() == "index.md":
-                    result["content"] = str(_scan_file(entry))
+                    result["content"] = _scan_file(entry)
                 elif entry.is_file():
-                    result["files"].append(str(_scan_file(entry, parent=new_parent)))
+                    result["files"].append(_scan_file(entry, parent=new_parent))
     return result
 
 

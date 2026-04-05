@@ -1,8 +1,8 @@
 import argparse
-import json
 import logging
 import sys
 
+from web_builder.builder import build_target
 from web_builder.scanner import scan_source
 
 log = logging.getLogger("web-builder")
@@ -21,7 +21,8 @@ def main() -> None:
     log.debug(f"{args.source=}")
     log.debug(f"{args.target=}")
 
-    print(json.dumps(scan_source(args.source), indent=4))
+    root = scan_source(args.source)
+    build_target(args.target, root)
 
     log.debug("END")
     return 0

@@ -1,22 +1,18 @@
 import logging
 import os
 
-from web_builder.node import File
+from web_builder.node import Node
 
 log = logging.getLogger("web-builder")
 
 
-def build_target(target: str, root: dict[str, any]) -> None:
-    for file in root.get("files"):
-        if isinstance(file, File):
-            if file.copy_target:
-                log.debug(
-                    f"COPY  {file.source} -> {os.path.join(target, file.copy_target)}"
-                )
-            if file.page_target:
-                log.debug(
-                    f"WRITE {file.source} -> {os.path.join(target, file.page_target)}"
-                )
-        else:
-            build_target(target, file)
+def build_target(target: str, node: Node, source_root: str | None = None) -> None:
+    if not source_root:
+        source_root = node.source
+        log.info(f"*** source_root={str(source_root)}")
+    log.info(
+        f">>> {node.source} -> {os.path.join(target, node.source.relative_to(source_root))}"
+    )
+    for child in node.children:
+        build_target(target, child, source_root=source_root)
     return

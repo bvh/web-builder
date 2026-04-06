@@ -1,3 +1,6 @@
+# Example directory (for now)
+example/
+
 # Python-generated files
 __pycache__/
 *.py[oc]
@@ -8,3 +11,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# VS Code
+.vscode

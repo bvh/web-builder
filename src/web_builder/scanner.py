@@ -2,26 +2,18 @@ import logging
 import os
 from pathlib import Path
 
-from web_builder.node import Content, File, Image
+from web_builder.node import Node
 
 log = logging.getLogger("web-builder")
 
 
-def scan_source(path: str) -> dict[str, any]:
+def scan_source(source: str) -> dict[str, any]:
     log.debug("scan_source START")
     result = None
-    if _check_source(path):
-        result = _scan_directory(path)
-    log.debug("scan_source END")
-    return result
-
-
-def _check_source(source: str) -> bool:
-    result = False
-    path = Path(os.path.abspath(source))
+    path = Path(source)
     if path.exists():
         if path.is_dir():
-            result = True
+            result = _scan_directory(path)
         else:
             raise (ValueError, f"source path ({source}) must be a directory")
     else:
@@ -29,46 +21,33 @@ def _check_source(source: str) -> bool:
     return result
 
 
-def _scan_directory(source: str, parent: str | None = None) -> dict[str, any]:
-    path = os.path.abspath(source)
-    path_obj = Path(path)
-    log.debug(f"{parent=}")
-    new_parent = os.path.join(parent, path_obj.name) if parent is not None else ""
-    log.debug(f"{new_parent=}")
-    result = {
-        "type": "DIR" if parent else "HOME",
-        "name": path_obj.name,
-        "source": os.path.abspath(source),
-        "path": new_parent,
-        "owner": path_obj.owner(),
-        "files": [],
-    }
+def _scan_directory(path: Path, parent: Node | None = None) -> Node:
+    current = Node(path, parent)
     with os.scandir(path) as entries:
         for entry in entries:
             # skip dotfiles and symbolic links
             if not (entry.name.startswith(".") or entry.is_symlink()):
                 if entry.is_dir():
-                    result["files"].append(
-                        _scan_directory(entry.path, parent=new_parent)
-                    )
+                    # Output discarded, since the node has already saved itself
+                    # to current's list of children.
+                    _scan_directory(Path(entry.path), parent=current)
+
+                # Special case for `index.md` and `config.json`. These are
+                # not treated as nodes, but rather as content and configuration
+                # for the current node.
                 elif entry.name.lower() == "config.json":
-                    result["config"] = _scan_file(entry)
+                    current.add_config(Path(entry.path))
                 elif entry.name.lower() == "index.md":
-                    result["content"] = _scan_file(entry)
+                    current.add_content(Path(entry.path))
+
                 elif entry.is_file():
-                    result["files"].append(_scan_file(entry, parent=new_parent))
-    return result
+                    # Output discarded, since the node has already saved itself
+                    # to current's list of children.
+                    Node(Path(entry.path), parent=current)
 
+                # This shouldn't happen. We skip symbolic links, and handle
+                # both directories and files.
+                else:
+                    log.warning(f"{entry.path} is an entry of unknown type")
 
-def _scan_file(entry: os.DirEntry, parent: str | None = None) -> dict[str, any]:
-    path = Path(entry.path)
-    suffix = path.suffix
-
-    if suffix.lower() in [".jpg", ".jpeg"]:
-        file = Image(entry, path, parent)
-    elif suffix.lower() in [".md"]:
-        file = Content(entry, path, parent)
-    else:
-        file = File(entry, path, parent)
-
-    return file
+    return current

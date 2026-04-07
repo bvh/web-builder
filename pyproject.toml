@@ -18,7 +18,11 @@ build = "web_builder.__main__:main"
 requires = ["uv_build>=0.11.3,<0.12.0"]
 build-backend = "uv_build"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [dependency-groups]
 dev = [
     "pre-commit>=4.5.1",
+    "pytest>=8.0",
 ]

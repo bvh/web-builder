@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+    body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100svh;
+    }
+    img {
+        max-width: 85svw;
+        max-height: 85svh;
+        object-fit: contain;
+    }
+</style>
+{% endblock %}
+{% block body %}
+<img src="{{ filename }}" alt="{{ title }}">
+{% endblock %}

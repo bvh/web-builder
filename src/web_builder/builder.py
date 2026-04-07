@@ -4,9 +4,17 @@ import os
 from pathlib import Path
 import shutil
 
+from jinja2 import Environment, PackageLoader
 from markdown_it import MarkdownIt
 
-from web_builder.node import Node
+from web_builder.node import Node, NodeType
+
+TEMPLATE_MAP = {
+    NodeType.HOME: "home.html",
+    NodeType.DIRECTORY: "directory.html",
+    NodeType.PAGE: "page.html",
+    NodeType.IMAGE: "image.html",
+}
 
 log = logging.getLogger("web-builder")
 
@@ -21,14 +29,16 @@ def build_target(target: str, node: Node) -> None:
     if test.exists():
         test.rename(f"{target}.{int(dt.now().timestamp())}")
 
+    jinja = Environment(loader=PackageLoader("web_builder", "templates/default"))
+
     # Create the target directory and kick off the build.
     os.makedirs(target)
-    _build_node(target, node, md)
+    _build_node(target, node, md, jinja)
 
     return
 
 
-def _build_node(target: str, node: Node, md: MarkdownIt) -> None:
+def _build_node(target: str, node: Node, md: MarkdownIt, jinja: Environment) -> None:
     log.info(f">>> {node.type}({node.source}) -> {target}")
 
     # Create directory, if needed. Pretty URLs are the default (and only)
@@ -51,13 +61,21 @@ def _build_node(target: str, node: Node, md: MarkdownIt) -> None:
     if content_target:
         content_target = os.path.join(target, content_target)
         log.info(f"  >>> WRITE:   {node.content_source} -> {content_target}")
-        if node.content_source:
-            Path(content_target).write_text(md.render(node.content_source.read_text()))
+
+        template = jinja.get_template(TEMPLATE_MAP[node.type])
+        context = {"title": node.source.name}
+
+        if node.type == NodeType.IMAGE:
+            context["filename"] = node.source.name
+        elif node.content_source:
+            context["content"] = md.render(node.content_source.read_text())
         else:
-            Path(content_target).write_text(md.render("No content provided."))
+            context["content"] = md.render("No content provided.")
+
+        Path(content_target).write_text(template.render(context))
 
     # Recursively build all child nodes.
     for child in node.children:
-        _build_node(target, child, md)
+        _build_node(target, child, md, jinja)
 
     return

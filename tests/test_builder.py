@@ -85,6 +85,25 @@ def test_build_page_gets_own_directory(tmp_path):
     assert "<h1>My Post</h1>" in html
 
 
+def test_build_output_is_valid_html(sample_source_tree, tmp_path):
+    target = tmp_path / "target"
+    root = scan_source(str(sample_source_tree))
+    build_target(str(target), root)
+    html = (target / "index.html").read_text()
+    assert "<!DOCTYPE html>" in html
+    assert "<title>" in html
+    assert "</html>" in html
+
+
+def test_build_image_template_has_img_tag(sample_source_tree, tmp_path):
+    target = tmp_path / "target"
+    root = scan_source(str(sample_source_tree))
+    build_target(str(target), root)
+    html = (target / "photos" / "photo" / "index.html").read_text()
+    assert '<img src="photo.jpg"' in html
+    assert "<title>photo.jpg</title>" in html
+
+
 def test_build_backs_up_existing_target(sample_source_tree, tmp_path):
     target = tmp_path / "target"
     target.mkdir()

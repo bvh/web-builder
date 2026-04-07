@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 
 log = logging.getLogger("web-builder")
@@ -8,8 +9,10 @@ class Node:
     def __init__(self, source: Path, parent: Node | None = None) -> None:
         self.source = source
         self.parent = parent
+        self.target_path = ""
         if self.parent:
             parent.add_child(self)
+            self.target_path = os.path.join(parent.target_path, self.source.name)
         self.children = []
         self.config_source = None
         self.content_source = None

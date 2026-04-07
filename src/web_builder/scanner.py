@@ -15,9 +15,9 @@ def scan_source(source: str) -> dict[str, any]:
         if path.is_dir():
             result = _scan_directory(path)
         else:
-            raise (ValueError, f"source path ({source}) must be a directory")
+            raise ValueError(f"source path ({source}) must be a directory")
     else:
-        raise (ValueError, f"source path ({source}) does not exist")
+        raise ValueError(f"source path ({source}) does not exist")
     return result
 
 

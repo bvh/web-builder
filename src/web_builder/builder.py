@@ -4,14 +4,18 @@ import os
 from pathlib import Path
 import shutil
 
+from markdown_it import MarkdownIt
+
 from web_builder.node import Node
 
 log = logging.getLogger("web-builder")
 
 
 def build_target(target: str, node: Node) -> None:
+    md = MarkdownIt("commonmark", {"typographer": True})
+    md.enable(["replacements", "smartquotes"])
 
-    # If the target directroy already exists, back it up by renaming. We're
+    # If the target directory already exists, back it up by renaming. We're
     # using the timestamp as a suffix, which should keep the backup unique.
     test = Path(target)
     if test.exists():
@@ -19,12 +23,12 @@ def build_target(target: str, node: Node) -> None:
 
     # Create the target directory and kick off the build.
     os.makedirs(target)
-    _build_node(target, node)
+    _build_node(target, node, md)
 
     return
 
 
-def _build_node(target: str, node: Node) -> None:
+def _build_node(target: str, node: Node, md: MarkdownIt) -> None:
     log.info(f">>> {node.type}({node.source}) -> {target}")
 
     # Create directory, if needed. Pretty URLs are the default (and only)
@@ -45,16 +49,15 @@ def _build_node(target: str, node: Node) -> None:
     # Finally, build any HTML pages.
     content_target = node.content_target
     if content_target:
-        log.debug(f"*** {content_target=}, {target=} ***")
         content_target = os.path.join(target, content_target)
         log.info(f"  >>> WRITE:   {node.content_source} -> {content_target}")
         if node.content_source:
-            shutil.copy(node.content_source, content_target)
+            Path(content_target).write_text(md.render(node.content_source.read_text()))
         else:
-            Path(content_target).touch()
+            Path(content_target).write_text(md.render("No content provided."))
 
     # Recursively build all child nodes.
     for child in node.children:
-        _build_node(target, child)
+        _build_node(target, child, md)
 
     return

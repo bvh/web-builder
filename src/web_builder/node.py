@@ -25,7 +25,10 @@ class Node:
         self.type = self._get_type()
         self.children = []
         self.config_source = None
-        self.content_source = None
+        if self.type == NodeType.PAGE:
+            self.content_source = self.source
+        else:
+            self.content_source = None
         return
 
     def add_child(self, child: Node) -> None:

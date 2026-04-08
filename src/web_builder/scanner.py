@@ -7,7 +7,7 @@ from web_builder.node import Node
 log = logging.getLogger("web-builder")
 
 
-def scan_source(source: str) -> dict[str, any]:
+def scan_source(source: str) -> Node:
     log.debug("scan_source START")
     result = None
     path = Path(source)

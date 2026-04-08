@@ -29,13 +29,14 @@ def build_target(target: str, node: Node) -> None:
     if test.exists():
         test.rename(f"{target}.{int(dt.now().timestamp())}")
 
+    # Autoescape is not enabled, which is **probably** not a security risk so
+    # long as we're only processing trusted content. If user generated content
+    # enters the picture, we will need to revisit.
     jinja = Environment(loader=PackageLoader("web_builder", "templates/default"))
 
     # Create the target directory and kick off the build.
     os.makedirs(target)
     _build_node(target, node, md, jinja)
-
-    return
 
 
 def _build_node(target: str, node: Node, md: MarkdownIt, jinja: Environment) -> None:
@@ -45,21 +46,21 @@ def _build_node(target: str, node: Node, md: MarkdownIt, jinja: Environment) -> 
     # option, so pages and images will need their own directories.
     dir_target = node.directory_target
     if dir_target:
-        dir_target = os.path.join(target, dir_target)
+        dir_target = Path(target) / dir_target
         log.info(f"  >>> MAKEDIR: {dir_target}")
         os.makedirs(dir_target)
 
     # Next, copy static files and images.
     copy_target = node.copy_target
     if copy_target:
-        copy_target = os.path.join(target, copy_target)
+        copy_target = Path(target) / copy_target
         log.info(f"  >>> COPY:    {node.source} -> {copy_target}")
         shutil.copy2(node.source, copy_target)
 
     # Finally, build any HTML pages.
     content_target = node.content_target
     if content_target:
-        content_target = os.path.join(target, content_target)
+        content_target = Path(target) / content_target
         log.info(f"  >>> WRITE:   {node.content_source} -> {content_target}")
 
         template = jinja.get_template(TEMPLATE_MAP[node.type])
@@ -77,5 +78,3 @@ def _build_node(target: str, node: Node, md: MarkdownIt, jinja: Environment) -> 
     # Recursively build all child nodes.
     for child in node.children:
         _build_node(target, child, md, jinja)
-
-    return

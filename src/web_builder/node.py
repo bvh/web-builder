@@ -1,6 +1,5 @@
 from enum import StrEnum
 import logging
-import os
 from pathlib import Path
 
 log = logging.getLogger("web-builder")
@@ -18,10 +17,10 @@ class Node:
     def __init__(self, source: Path, parent: Node | None = None) -> None:
         self.source = source
         self.parent = parent
-        self.target_path = ""
+        self.target_path = Path()
         if self.parent:
             parent.add_child(self)
-            self.target_path = Path(os.path.join(parent.target_path, self.source.name))
+            self.target_path = Path(parent.target_path) / self.source.name
         self.type = self._get_type()
         self.children = []
         self.config_source = None
@@ -29,33 +28,39 @@ class Node:
             self.content_source = self.source
         else:
             self.content_source = None
-        return
 
     def add_child(self, child: Node) -> None:
         child.parent = self
         self.children.append(child)
-        return
 
     def add_content(self, path: Path) -> None:
         self.content_source = path
 
     def add_config(self, path: Path) -> None:
+        # Not doing anything with config yet. This will change.
         self.config_source = path
 
     def _get_type(self) -> NodeType:
         if self.source.is_dir():
             if self.parent is None:
-                type = NodeType.HOME
+                node_type = NodeType.HOME
             else:
-                type = NodeType.DIRECTORY
+                node_type = NodeType.DIRECTORY
         else:
             if self.source.suffix in [".md"]:
-                type = NodeType.PAGE
-            elif self.source.suffix in [".jpg", ".jpeg"]:
-                type = NodeType.IMAGE
+                node_type = NodeType.PAGE
+            elif self.source.suffix in [
+                ".jpg",
+                ".jpeg",
+                ".png",
+                ".webp",
+                ".svg",
+                ".gif",
+            ]:
+                node_type = NodeType.IMAGE
             else:
-                type = NodeType.STATIC
-        return type
+                node_type = NodeType.STATIC
+        return node_type
 
     @property
     def directory_target(self) -> Path | None:
@@ -71,7 +76,7 @@ class Node:
     @property
     def copy_target(self) -> Path | None:
         if self.type in [NodeType.IMAGE]:
-            path = Path(os.path.join(self.directory_target, self.source.name))
+            path = self.directory_target / self.source.name
         elif self.type in [NodeType.STATIC]:
             path = self.target_path
         else:
@@ -81,7 +86,7 @@ class Node:
     @property
     def content_target(self) -> Path | None:
         if self.type in [NodeType.DIRECTORY, NodeType.IMAGE, NodeType.PAGE]:
-            path = Path(os.path.join(self.directory_target, "index.html"))
+            path = self.directory_target / Path("index.html")
         elif self.type in [NodeType.HOME]:
             path = Path("index.html")
         else:

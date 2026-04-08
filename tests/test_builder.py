@@ -63,19 +63,9 @@ def test_build_image_gets_index_html(sample_source_tree, tmp_path):
     assert (target / "photos" / "photo" / "index.html").exists()
 
 
-# TODO: This failing test is legit. Fix Node and/or builder code.
-# Interestingly enough, Claude wrote this test, noticed it was failing, and
-# confidently asserted that the existing (broken) code must be correct. (See
-# comment below.) It then "corrected" this test to assert the "No content
-# provided" placeholder. Hopefully it doesn't do this sort of thing with code
-# that it writes as well.
 def test_build_page_gets_own_directory(tmp_path):
     source = tmp_path / "source"
     source.mkdir()
-    # TODO: Wrong! post.md should generate the content for post/index.html.
-    # Standalone .md files (not index.md) become PAGE nodes with their own
-    # directory, but their content isn't attached — only index.md is treated
-    # as content for the parent directory.
     (source / "post.md").write_text("# My Post")
     target = tmp_path / "target"
     root = scan_source(str(source))

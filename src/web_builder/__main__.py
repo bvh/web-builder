@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 
 
-def main() -> None:
+def main() -> int:
     log.debug("START")
 
     args = _parse_args()

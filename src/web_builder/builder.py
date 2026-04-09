@@ -7,6 +7,7 @@ import shutil
 from jinja2 import Environment, PackageLoader
 from markdown_it import MarkdownIt
 
+from web_builder.metadata import read_metadata, strip_metadata
 from web_builder.node import Node, NodeType
 
 TEMPLATE_MAP = {
@@ -56,6 +57,8 @@ def _build_node(target: str, node: Node, md: MarkdownIt, jinja: Environment) -> 
         copy_target = Path(target) / copy_target
         log.info(f"  >>> COPY:    {node.source} -> {copy_target}")
         shutil.copy2(node.source, copy_target)
+        if node.type == NodeType.IMAGE:
+            strip_metadata(copy_target)
 
     # Finally, build any HTML pages.
     content_target = node.content_target
@@ -68,6 +71,10 @@ def _build_node(target: str, node: Node, md: MarkdownIt, jinja: Environment) -> 
 
         if node.type == NodeType.IMAGE:
             context["filename"] = node.source.name
+            metadata = read_metadata(node.source)
+            context["exif"] = metadata["exif"]
+            context["iptc"] = metadata["iptc"]
+            context["xmp"] = metadata["xmp"]
         elif node.content_source:
             context["content"] = md.render(node.content_source.read_text())
         else:

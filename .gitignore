@@ -1,5 +1,6 @@
-# Example directory (for now)
+# Example directories (for now)
 example/
+public/
 
 # Python-generated files
 __pycache__/

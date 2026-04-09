@@ -4,17 +4,80 @@
     body {
         margin: 0;
         display: flex;
-        justify-content: center;
+        flex-direction: column;
         align-items: center;
         min-height: 100svh;
+        font-family: system-ui, sans-serif;
     }
     img {
         max-width: 85svw;
         max-height: 85svh;
         object-fit: contain;
     }
+    .metadata {
+        width: 85svw;
+        padding: 1rem 0;
+    }
+    .metadata details {
+        margin-bottom: 0.5rem;
+    }
+    .metadata summary {
+        cursor: pointer;
+        font-weight: bold;
+        padding: 0.25rem 0;
+    }
+    .metadata table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    .metadata td {
+        padding: 0.2rem 0.5rem;
+        border-bottom: 1px solid #eee;
+        vertical-align: top;
+    }
+    .metadata td:first-child {
+        white-space: nowrap;
+        font-family: monospace;
+        color: #555;
+        width: 30%;
+    }
 </style>
 {% endblock %}
 {% block body %}
 <img src="{{ filename }}" alt="{{ title }}">
+{% if exif or iptc or xmp %}
+<div class="metadata">
+    {% if exif %}
+    <details>
+        <summary>EXIF</summary>
+        <table>
+        {% for key, value in exif.items() %}
+            <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+        {% endfor %}
+        </table>
+    </details>
+    {% endif %}
+    {% if iptc %}
+    <details>
+        <summary>IPTC</summary>
+        <table>
+        {% for key, value in iptc.items() %}
+            <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+        {% endfor %}
+        </table>
+    </details>
+    {% endif %}
+    {% if xmp %}
+    <details>
+        <summary>XMP</summary>
+        <table>
+        {% for key, value in xmp.items() %}
+            <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+        {% endfor %}
+        </table>
+    </details>
+    {% endif %}
+</div>
+{% endif %}
 {% endblock %}

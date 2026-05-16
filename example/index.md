@@ -1,0 +1,1 @@
+"In the beginning, there as nothing, and it was good."

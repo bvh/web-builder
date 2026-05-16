@@ -1,12 +1,14 @@
 import os
 from pathlib import Path
 
+from .markdown import Markdown
+
 
 class Node:
     def __init__(self, path: str, parent: Node = None) -> None:
         self.path = Path(path)
         self.parent = parent
-        self.content = None
+        self.markdown = None
         self.config = None
         self.children = []
         self.files = []
@@ -14,7 +16,7 @@ class Node:
         if self.path.is_file() and self.path.name.endswith(".md"):
             # If the node path is a markdown file, then that markdown file
             # is the node's content. Nothing else to do.
-            self.content = self.path
+            self.markdown = Markdown(self.path)
 
         elif self.path.is_dir():
             # If the node is a directory, then we need to look for content,
@@ -37,7 +39,7 @@ class Node:
                             self.config = Path(entry.path)
                         elif entry.name == "index.md":
                             # markdown content for this node
-                            self.content = Path(entry.path)
+                            self.markdown = Markdown(Path(entry.path))
                         elif entry.name.endswith(".md"):
                             # child pages within this node
                             self.children.append(Node(entry.path, parent=self))
@@ -49,4 +51,4 @@ class Node:
             raise ValueError(f"ERROR: {self.path} is not a markdown file or directory")
 
     def __str__(self) -> str:
-        return f"Node(path={self.path}, content={self.content}, children={len(self.children)})"
+        return f"Node(path={self.path}, markdown={self.markdown}, children={len(self.children)})"

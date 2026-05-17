@@ -1,17 +1,23 @@
 import os
 from pathlib import Path
 
+from jinja2 import Environment, PackageLoader
+
 from .markdown import Markdown
 
 
 class Node:
     def __init__(self, path: str, parent: Node = None) -> None:
         self.path = Path(path)
+        self.name = self.path.stem
         self.parent = parent
         self.markdown = None
         self.config = None
         self.children = []
         self.files = []
+        self.jinja = Environment(
+            loader=PackageLoader("web_builder", "templates/default")
+        )
 
         if self.path.is_file() and self.path.name.endswith(".md"):
             # If the node path is a markdown file, then that markdown file
@@ -50,5 +56,12 @@ class Node:
         else:
             raise ValueError(f"ERROR: {self.path} is not a markdown file or directory")
 
+    def render(self) -> str:
+        template = self.jinja.get_template("page.html")
+        if self.markdown:
+            return template.render(content=self.markdown.render())
+        else:
+            return template.render(content="")
+
     def __str__(self) -> str:
-        return f"Node(path={self.path}, markdown={self.markdown}, children={len(self.children)})"
+        return f"Node(path={self.path}, name={self.name}, markdown={self.markdown}, children={len(self.children)})"

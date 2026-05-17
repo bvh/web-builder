@@ -6,7 +6,7 @@ def main() -> None:
     args = _parse_args()
     site = Site(source=args.source)
     print(site)
-    print(site.root.markdown.render())
+    print(site.root.render())
 
 
 def _parse_args() -> argparse.Namespace:

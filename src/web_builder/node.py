@@ -1,28 +1,25 @@
 import os
 from pathlib import Path
 
-from jinja2 import Environment, PackageLoader
 
 from .markdown import Markdown
 
 
 class Node:
-    def __init__(self, path: str, parent: Node = None) -> None:
+    def __init__(self, path: str, parent: Node = None, site=None) -> None:
         self.path = Path(path)
         self.name = self.path.stem
         self.parent = parent
+        self.site = site if site else parent.site if parent else None
         self.markdown = None
         self.config = None
         self.children = []
         self.files = []
-        self.jinja = Environment(
-            loader=PackageLoader("web_builder", "templates/default")
-        )
 
         if self.path.is_file() and self.path.name.endswith(".md"):
             # If the node path is a markdown file, then that markdown file
             # is the node's content. Nothing else to do.
-            self.markdown = Markdown(self.path)
+            self.markdown = Markdown(self.path, self.site.md)
 
         elif self.path.is_dir():
             # If the node is a directory, then we need to look for content,
@@ -45,7 +42,7 @@ class Node:
                             self.config = Path(entry.path)
                         elif entry.name == "index.md":
                             # markdown content for this node
-                            self.markdown = Markdown(Path(entry.path))
+                            self.markdown = Markdown(Path(entry.path), self.site.md)
                         elif entry.name.endswith(".md"):
                             # child pages within this node
                             self.children.append(Node(entry.path, parent=self))
@@ -57,7 +54,7 @@ class Node:
             raise ValueError(f"ERROR: {self.path} is not a markdown file or directory")
 
     def render(self) -> str:
-        template = self.jinja.get_template("page.html")
+        template = self.site.jinja.get_template("page.html")
         if self.markdown:
             return template.render(content=self.markdown.render())
         else:
@@ -65,7 +62,11 @@ class Node:
 
     def __str__(self) -> str:
         lines = [f"== {self.path} =="]
-        lines.append(f"Node(name={self.name}, markdown={self.markdown}, config={self.config})")
-        lines.append(f"{self.render()}")
+        lines.append(
+            f"Node(name={self.name}, markdown={self.markdown}, config={self.config})"
+        )
+        lines.append(
+            f"{self.site.jinja.get_template('page.html').render(content=self.markdown.render() if self.markdown else '')}"
+        )
         lines.append("")
         return "\n".join(lines)

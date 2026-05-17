@@ -4,9 +4,9 @@ from markdown_it import MarkdownIt
 
 
 class Markdown:
-    def __init__(self, path: os.PathLike) -> None:
+    def __init__(self, path: os.PathLike, md: MarkdownIt) -> None:
         self.path = path
-        self.md = MarkdownIt()
+        self.md = md
 
     def render(self) -> str:
         with open(self.path, "r") as f:

@@ -64,4 +64,8 @@ class Node:
             return template.render(content="")
 
     def __str__(self) -> str:
-        return f"Node(path={self.path}, name={self.name}, markdown={self.markdown}, children={len(self.children)})"
+        lines = [f"== {self.path} =="]
+        lines.append(f"Node(name={self.name}, markdown={self.markdown}, config={self.config})")
+        lines.append(f"{self.render()}")
+        lines.append("")
+        return "\n".join(lines)

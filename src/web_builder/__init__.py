@@ -1,12 +1,19 @@
 import argparse
-from web_builder.site import Site
+
+from .site import Site
+from .node import Node
 
 
 def main() -> None:
     args = _parse_args()
     site = Site(source=args.source)
-    print(site)
-    print(site.root.render())
+    print_nodes(site.root)
+
+
+def print_nodes(node: Node) -> None:
+    print(node)
+    for child in node.children:
+        print_nodes(child)
 
 
 def _parse_args() -> argparse.Namespace:

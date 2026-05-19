@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 
 from .site import Site
 from .node import Node
@@ -21,6 +22,9 @@ def print_nodes(node: Node) -> None:
 def build_nodes(node: Node) -> None:
     print(f"Building node: {node.name} / {node.path} -> {node.target_file}")
     os.makedirs(node.target_dir, exist_ok=True)
+    for file in node.files:
+        print(f"Copying file: {file} -> {node.target_dir.joinpath(file.name)}")
+        shutil.copy(file, node.target_dir.joinpath(file.name))
     with open(f"{node.target_file}", "w") as f:
         f.write(node.render())
     for child in node.children:
